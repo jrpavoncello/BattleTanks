@@ -15,6 +15,19 @@ class BATTLETANKS_API ATankPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void Tick(float deltaTime) override;
+
+private:
 	ATankPawn* GetControlledTank() const;
-	void BeginPlay() override;
+	void AimTowardsCrosshair();
+	bool GetSightRayHitLocation(FVector& out_hitLocation) const;
+
+	UPROPERTY(EditAnywhere)
+	float CrosshairXLocation = 0.5f;
+
+	UPROPERTY(EditAnywhere)
+	float CrosshairYLocation = 0.3347f;
 };
