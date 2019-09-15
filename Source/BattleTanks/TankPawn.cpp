@@ -3,6 +3,7 @@
 
 #include "TankPawn.h"
 #include "Engine/StaticMesh.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 ATankPawn::ATankPawn()
@@ -16,7 +17,28 @@ ATankPawn::ATankPawn()
 void ATankPawn::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	auto turretComponents = GetComponentsByTag(UActorComponent::StaticClass(), FName(*FString("Turret")));
+	auto barrelComponents = GetComponentsByTag(UActorComponent::StaticClass(), FName(*FString("Barrel")));
+
+	if (turretComponents.Num() > 0 && barrelComponents.Num() > 0)
+	{
+		turretComponent = Cast<UStaticMeshComponent>(turretComponents[0]);
+		barrelComponent = Cast<UStaticMeshComponent>(barrelComponents[0]);
+
+		if (turretComponent == nullptr || barrelComponent == nullptr)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Turret and Barrel components were not of type UStaticMeshComponent."));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Found Turret and Barrel components."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to find Turret and Barrel components."));
+	}
 }
 
 // Called every frame
@@ -35,36 +57,29 @@ void ATankPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void ATankPawn::AimAt(const FVector& targetLocation)
 {
-	auto turretComponents = GetComponentsByTag(UActorComponent::StaticClass(), FName(*FString("Turret")));
-	auto barrelComponents = GetComponentsByTag(UActorComponent::StaticClass(), FName(*FString("Barrel")));
-
-	if (turretComponents.Num() > 0 && barrelComponents.Num() > 0)
+	if (turretComponent != nullptr && barrelComponent != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Found Turret and Barrel components, target %s."), *(targetLocation.ToString()));
+		auto turretTransform = turretComponent->GetComponentTransform();
+		auto worldTargetVec = targetLocation - turretTransform.GetLocation();
 
-		auto turretMesh = Cast<UStaticMeshComponent>(turretComponents[0]);
-		auto barrelMesh = Cast<UStaticMeshComponent>(barrelComponents[0]);
+		worldTargetVec.Normalize();
 
-		auto turretTransform = turretMesh->GetRelativeTransform();
-		auto oldTurretRotation = turretTransform.Rotator();
-		auto turretRotation = FRotator(oldTurretRotation.Pitch, targetLocation.Z, oldTurretRotation.Roll);
-		FRotator turretDelta = turretRotation - oldTurretRotation;
-		turretMesh->SetRelativeRotation(turretRotation);
-		turretMesh->MarkRenderTransformDirty();
+		auto turretDelta = worldTargetVec.Rotation() - turretTransform.Rotator();
 
-		UE_LOG(LogTemp, Warning, TEXT("Turret delta rotation %s."), *(turretDelta.ToString()));
+		auto barrelPitchToTarget = turretDelta.Pitch;
 
-		auto barrelTransform = barrelMesh->GetRelativeTransform();
-		auto oldBarrelRotation = barrelTransform.Rotator();
-		auto barrelRotation = FRotator(targetLocation.Y, oldBarrelRotation.Yaw, oldBarrelRotation.Roll);
-		barrelMesh->SetRelativeRotation(barrelRotation);
-		barrelMesh->MarkRenderTransformDirty();
+		turretDelta.Pitch = 0.f;
+		turretDelta.Roll = 0.f;
 
-		UE_LOG(LogTemp, Warning, TEXT("New relative Barrel rotation %s."), *(barrelRotation.ToString()));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to find Turret component."));
+		turretComponent->AddRelativeRotation(turretDelta);
+
+		barrelPitchToTarget = FMath::Clamp<float>(barrelPitchToTarget, barrelPitchMin, barrelPitchMax);
+
+		auto barrelLocalRot = FRotator(barrelPitchToTarget, 0.f, 0.f);
+
+		barrelComponent->SetRelativeRotation(barrelLocalRot);
+
+		UE_LOG(LogTemp, Warning, TEXT("Relative barrel rotation %s."), *(barrelLocalRot.ToString()));
 	}
 }
 

@@ -15,6 +15,18 @@ public:
 	// Sets default values for this pawn's properties
 	ATankPawn();
 
+private:
+	UPROPERTY(EditAnywhere)
+	float barrelPitchMin = -5.f;
+
+	UPROPERTY(EditAnywhere)
+	float barrelPitchMax = 25.f;
+
+	float barrelStartPitch;
+
+	UStaticMeshComponent* barrelComponent;
+	UStaticMeshComponent* turretComponent;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

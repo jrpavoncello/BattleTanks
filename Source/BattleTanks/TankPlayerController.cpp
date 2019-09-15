@@ -24,7 +24,7 @@ void ATankPlayerController::AimTowardsCrosshair()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Crosshair hit detected at %s"), *(hitLocation.ToString()));
 
-		pawn->AimAt(PlayerCameraManager->GetCameraRotation().Vector());
+		pawn->AimAt(hitLocation);
 	}
 }
 
@@ -49,7 +49,7 @@ bool ATankPlayerController::GetSightRayHitLocation(FVector& out_hitLocation) con
 
 		auto* world = GetWorld();
 
-		DrawDebugLine(world, lineStart, lineEnd, FColor(255, 0, 0), false, 0.f, 0.f, 10.f);
+		//DrawDebugLine(world, lineStart, lineEnd, FColor(255, 0, 0), false, 0.f, 0.f, 10.f);
 
 		FHitResult hitResult;
 		if (world->LineTraceSingleByChannel(hitResult, worldLocation, lineEnd, ECollisionChannel::ECC_Visibility, queryParams, responseParams))
