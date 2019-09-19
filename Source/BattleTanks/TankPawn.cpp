@@ -59,12 +59,11 @@ void ATankPawn::AimAt(const FVector& targetLocation)
 {
 	if (turretComponent != nullptr && barrelComponent != nullptr)
 	{
-		auto turretTransform = turretComponent->GetComponentTransform();
-		auto worldTargetVec = targetLocation - turretTransform.GetLocation();
+		auto turretWorldTransform = turretComponent->GetComponentTransform();
+		auto worldTargetVec = targetLocation - turretWorldTransform.GetLocation();
 
-		worldTargetVec.Normalize();
-
-		auto turretDelta = worldTargetVec.Rotation() - turretTransform.Rotator();
+		// Maps the world vector to the target into a local delta from the turrets current rotation
+		auto turretDelta = turretWorldTransform.Rotator().UnrotateVector(worldTargetVec).Rotation();
 
 		auto barrelPitchToTarget = turretDelta.Pitch;
 
