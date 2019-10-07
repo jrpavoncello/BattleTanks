@@ -23,7 +23,9 @@ protected:
 private:
 	ATankPawn* GetControlledTank() const;
 	void AimTowardsCrosshair();
-	bool GetSightRayHitLocation(FVector& out_hitLocation) const;
+	bool GetSightRayHitLocation(FVector& out_hitLocation, FVector& worldDirection) const;
+
+	FVector barrelRotationAtLastHit = FVector(0);
 
 	UPROPERTY(EditAnywhere)
 	float CrosshairXLocation = 0.5f;

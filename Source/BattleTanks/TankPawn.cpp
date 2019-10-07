@@ -4,6 +4,7 @@
 #include "TankPawn.h"
 #include "Engine/StaticMesh.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ATankPawn::ATankPawn()
@@ -60,25 +61,53 @@ void ATankPawn::AimAt(const FVector& targetLocation)
 	if (turretComponent != nullptr && barrelComponent != nullptr)
 	{
 		auto turretWorldTransform = turretComponent->GetComponentTransform();
-		auto worldTargetVec = targetLocation - turretWorldTransform.GetLocation();
 
-		// Maps the world vector to the target into a local delta from the turrets current rotation
-		auto turretDelta = turretWorldTransform.Rotator().UnrotateVector(worldTargetVec).Rotation();
+		FVector tossVelocity(0);
+		FCollisionResponseParams responseParams = FCollisionResponseParams::DefaultResponseParam;
+		if (UGameplayStatics::SuggestProjectileVelocity(
+			this,
+			tossVelocity,
+			turretWorldTransform.GetLocation(),
+			targetLocation,
+			launchSpeed,
+			false,
+			0.0f,
+			0.0f,
+			ESuggestProjVelocityTraceOption::DoNotTrace,
+			responseParams,
+			TArray<AActor*>(),
+			false))
+		{
+			// Maps the world vector to the target into a local delta from the turrets current rotation
+			auto turretDelta = turretWorldTransform.Rotator().UnrotateVector(tossVelocity).Rotation();
 
-		auto barrelPitchToTarget = turretDelta.Pitch;
+			//UE_LOG(LogTemp, Warning, TEXT("World launch velocity %s."), *(tossVelocity.ToString()));
+			//UE_LOG(LogTemp, Warning, TEXT("Relative turret rotation %s."), *(turretDelta.ToString()));
 
-		turretDelta.Pitch = 0.f;
-		turretDelta.Roll = 0.f;
+			auto barrelPitchToTarget = turretDelta.Pitch;
 
-		turretComponent->AddRelativeRotation(turretDelta);
+			turretDelta.Pitch = 0.f;
+			turretDelta.Roll = 0.f;
 
-		barrelPitchToTarget = FMath::Clamp<float>(barrelPitchToTarget, barrelPitchMin, barrelPitchMax);
+			turretComponent->AddRelativeRotation(turretDelta);
 
-		auto barrelLocalRot = FRotator(barrelPitchToTarget, 0.f, 0.f);
+			barrelPitchToTarget = FMath::Clamp<float>(barrelPitchToTarget, barrelPitchMin, barrelPitchMax);
 
-		barrelComponent->SetRelativeRotation(barrelLocalRot);
+			auto barrelLocalRot = FRotator(barrelPitchToTarget, 0.f, 0.f);
 
-		UE_LOG(LogTemp, Warning, TEXT("Relative barrel rotation %s."), *(barrelLocalRot.ToString()));
+			barrelComponent->SetRelativeRotation(barrelLocalRot);
+
+			//UE_LOG(LogTemp, Warning, TEXT("Relative barrel rotation %s."), *(barrelLocalRot.ToString()));
+		}
 	}
 }
 
+FVector ATankPawn::GetWorldBarrelRotation()
+{
+	if (barrelComponent != nullptr)
+	{
+		return barrelComponent->GetComponentRotation().Vector();
+	}
+
+	return FVector(0);
+}

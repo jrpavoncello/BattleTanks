@@ -19,25 +19,37 @@ void ATankPlayerController::AimTowardsCrosshair()
 		return;
 	}
 
-	FVector hitLocation;
-	if (GetSightRayHitLocation(hitLocation))
+	FVector hitLocation(0);
+	FVector cameraWorldRotation(0);
+	if (GetSightRayHitLocation(hitLocation, cameraWorldRotation))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Crosshair hit detected at %s"), *(hitLocation.ToString()));
+		//UE_LOG(LogTemp, Warning, TEXT("Crosshair hit detected at %s"), *(hitLocation.ToString()));
 
 		pawn->AimAt(hitLocation);
+
+		barrelRotationAtLastHit = pawn->GetWorldBarrelRotation();
+	}
+	else if(barrelRotationAtLastHit != FVector(0))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WorldDirection %s, BarrelRotation %s"), *(cameraWorldRotation.ToString()), *(barrelRotationAtLastHit.ToString()));
+
+		FVector dummyWorldVector = FVector(cameraWorldRotation.X, cameraWorldRotation.Y, barrelRotationAtLastHit.Z) * 10000.f + pawn->GetActorTransform().GetLocation();
+
+		UE_LOG(LogTemp, Warning, TEXT("Dummy AimAt vector %s"), *(dummyWorldVector.ToString()));
+
+		pawn->AimAt(dummyWorldVector);
 	}
 }
 
-bool ATankPlayerController::GetSightRayHitLocation(FVector& out_hitLocation) const
+bool ATankPlayerController::GetSightRayHitLocation(FVector& out_hitLocation, FVector& out_cameraWorldRotation) const
 {
 	int32 viewportSizeX, viewportSizeY;
 	GetViewportSize(viewportSizeX, viewportSizeY);
 
 	FVector2D screenLocation = FVector2D(viewportSizeX * this->CrosshairXLocation, viewportSizeY * this->CrosshairYLocation);
 
-	FVector worldLocation;
-	FVector worldDirection;
-	if (DeprojectScreenPositionToWorld(screenLocation.X, screenLocation.Y, worldLocation, worldDirection))
+	FVector worldLocation(0);
+	if (DeprojectScreenPositionToWorld(screenLocation.X, screenLocation.Y, worldLocation, out_cameraWorldRotation))
 	{
 		FCollisionQueryParams queryParams = FCollisionQueryParams::DefaultQueryParam;
 		FCollisionResponseParams responseParams = FCollisionResponseParams::DefaultResponseParam;
@@ -45,7 +57,7 @@ bool ATankPlayerController::GetSightRayHitLocation(FVector& out_hitLocation) con
 		float collisionDistance = 2000000.f;
 
 		FVector lineStart = worldLocation;
-		FVector lineEnd = lineStart + (worldDirection * collisionDistance);
+		FVector lineEnd = lineStart + (out_cameraWorldRotation * collisionDistance);
 
 		auto* world = GetWorld();
 
@@ -59,10 +71,14 @@ bool ATankPlayerController::GetSightRayHitLocation(FVector& out_hitLocation) con
 			return true;
 		}
 	}
+	else
+	{
+		out_cameraWorldRotation = FVector(0);
+	}
 
 	UE_LOG(LogTemp, Warning, TEXT("No crosshair hit detected."));
 
-	out_hitLocation = FVector(0, 0, 0);
+	out_hitLocation = FVector(0);
 
 	return false;
 }

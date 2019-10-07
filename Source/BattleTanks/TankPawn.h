@@ -22,6 +22,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	float barrelPitchMax = 25.f;
 
+	UPROPERTY(EditAnywhere)
+	float launchSpeed = 10000.f;
+
 	float barrelStartPitch;
 
 	UStaticMeshComponent* barrelComponent;
@@ -39,5 +42,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void AimAt(const FVector& targetLocation);
+
+	FVector GetWorldBarrelRotation();
 
 };
