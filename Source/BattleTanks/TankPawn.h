@@ -25,6 +25,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	float launchSpeed = 10000.f;
 
+	UPROPERTY(EditAnywhere)
+	float aimSpeed = 0.03f;
+
 	float barrelStartPitch;
 
 	UStaticMeshComponent* barrelComponent;
