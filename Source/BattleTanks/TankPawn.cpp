@@ -88,8 +88,9 @@ void ATankPawn::AimAt(const FVector& targetLocation)
 
 			turretDelta.Pitch = 0.f;
 			turretDelta.Roll = 0.f;
+			turretDelta.Yaw = FMath::Clamp<float>(turretDelta.Yaw, -aimSpeed, aimSpeed);
 
-			turretComponent->AddRelativeRotation(turretDelta * aimSpeed);
+			turretComponent->AddRelativeRotation(turretDelta);
 
 			barrelPitchToTarget = FMath::Clamp<float>(barrelPitchToTarget, barrelPitchMin, barrelPitchMax);
 
@@ -99,7 +100,9 @@ void ATankPawn::AimAt(const FVector& targetLocation)
 
 			auto deltaBarrelRot = targetBarrelLocalRot - relativeBarrelRot;
 
-			barrelComponent->AddRelativeRotation(deltaBarrelRot * aimSpeed);
+			deltaBarrelRot.Pitch = FMath::Clamp<float>(deltaBarrelRot.Pitch, -aimSpeed, aimSpeed);
+
+			barrelComponent->AddRelativeRotation(deltaBarrelRot);
 
 			//UE_LOG(LogTemp, Warning, TEXT("Relative barrel rotation %s."), *(barrelLocalRot.ToString()));
 		}

@@ -20,13 +20,13 @@ private:
 	float barrelPitchMin = -5.f;
 
 	UPROPERTY(EditAnywhere)
-	float barrelPitchMax = 25.f;
+	float barrelPitchMax = 30.f;
 
 	UPROPERTY(EditAnywhere)
 	float launchSpeed = 10000.f;
 
 	UPROPERTY(EditAnywhere)
-	float aimSpeed = 0.03f;
+	float aimSpeed = 0.3f;
 
 	float barrelStartPitch;
 
